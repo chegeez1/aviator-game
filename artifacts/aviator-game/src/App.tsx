@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Header } from "./components/Header";
 import { HistoryBar } from "./components/HistoryBar";
 import { GameCanvas } from "./components/GameCanvas";
@@ -7,28 +7,84 @@ import { PlayerBetsList } from "./components/PlayerBetsList";
 import { AuthModal } from "./components/AuthModal";
 import { useGameState } from "./hooks/useGameState";
 import { useAuth } from "./hooks/useAuth";
+import { useSound } from "./hooks/useSound";
 
 export default function App() {
   const { gameState, connected } = useGameState();
   const { user, loading, login, register, logout, refreshBalance } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
+  const sound = useSound();
+
+  const prevPhaseRef = useRef<string>(gameState.phase);
+  const prevMultRef = useRef<number>(gameState.multiplier);
+  const prevCountdownRef = useRef<number>(gameState.countdown);
+  const engineRunningRef = useRef(false);
+
+  // React to game phase and multiplier changes for sounds
+  useEffect(() => {
+    const prevPhase = prevPhaseRef.current;
+    const curPhase = gameState.phase;
+    prevPhaseRef.current = curPhase;
+
+    if (prevPhase !== curPhase) {
+      if (curPhase === "flying") {
+        sound.playTakeoff();
+        setTimeout(() => {
+          sound.startEngine();
+          engineRunningRef.current = true;
+        }, 300);
+      }
+      if (curPhase === "crashed") {
+        if (engineRunningRef.current) {
+          sound.stopEngine();
+          engineRunningRef.current = false;
+        }
+        sound.playCrash();
+      }
+      if (curPhase === "waiting") {
+        if (engineRunningRef.current) {
+          sound.stopEngine();
+          engineRunningRef.current = false;
+        }
+      }
+    }
+
+    // Update engine pitch while flying
+    if (curPhase === "flying" && engineRunningRef.current) {
+      const prevMult = prevMultRef.current;
+      if (gameState.multiplier !== prevMult) {
+        sound.updateEngine(gameState.multiplier);
+      }
+    }
+    prevMultRef.current = gameState.multiplier;
+  }, [gameState.phase, gameState.multiplier, sound]);
+
+  // Countdown tick
+  useEffect(() => {
+    if (gameState.phase !== "waiting") return;
+    const prevInt = Math.ceil(prevCountdownRef.current);
+    const curInt = Math.ceil(gameState.countdown);
+    if (curInt !== prevInt && curInt > 0) {
+      sound.playTick();
+    }
+    prevCountdownRef.current = gameState.countdown;
+  }, [gameState.countdown, gameState.phase, sound]);
 
   const handleBetPlaced = useCallback(() => {
     refreshBalance();
-  }, [refreshBalance]);
+    sound.playBet();
+  }, [refreshBalance, sound]);
 
   const handleCashout = useCallback(() => {
     refreshBalance();
-  }, [refreshBalance]);
+    sound.playCashout();
+  }, [refreshBalance, sound]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: "#0d0d0d" }}>
         <div className="flex flex-col items-center gap-3">
-          <span
-            className="font-black text-3xl tracking-widest uppercase"
-            style={{ color: "#e03131" }}
-          >
+          <span className="font-black text-3xl tracking-widest uppercase" style={{ color: "#e03131" }}>
             AVIATOR
           </span>
           <div
@@ -47,6 +103,8 @@ export default function App() {
         connected={connected}
         onAuthClick={() => setShowAuth(true)}
         onLogout={logout}
+        muted={sound.muted}
+        onToggleMute={sound.toggleMute}
       />
 
       <HistoryBar history={gameState.history} />
