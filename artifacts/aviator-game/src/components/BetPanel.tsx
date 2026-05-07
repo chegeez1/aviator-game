@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex = 0 }: Props) {
-  const [amount, setAmount] = useState("10");
+  const [amount, setAmount] = useState("20");
   const [autoCashout, setAutoCashout] = useState("");
   const [autoEnabled, setAutoEnabled] = useState(false);
   const [betActive, setBetActive] = useState(false);
@@ -25,27 +25,22 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex
     const cur = gameState.phase;
     prevPhaseRef.current = cur;
 
-    if (cur === "flying" && betActive) {
-      setCashoutAvailable(true);
-    }
+    if (cur === "flying" && betActive) setCashoutAvailable(true);
     if (cur === "waiting") {
       setCashoutAvailable(false);
       setBetActive(false);
     }
-    if (cur === "crashed") {
-      setCashoutAvailable(false);
-    }
+    if (cur === "crashed") setCashoutAvailable(false);
+    void prev;
   }, [gameState.phase, betActive]);
 
   useEffect(() => {
     if (!userId) return;
     const myBet = gameState.bets.find((b) => b.userId === userId);
-    if (myBet?.cashedOut) {
-      setCashoutAvailable(false);
-    }
+    if (myBet?.cashedOut) setCashoutAvailable(false);
   }, [gameState.bets, userId]);
 
-  const quickAmounts = [10, 50, 100, 500];
+  const quickAmounts = [20, 50, 100, 1000];
 
   async function handleBet() {
     const amt = parseFloat(amount);
@@ -79,48 +74,43 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex
   }
 
   const isWaiting = gameState.phase === "waiting";
-  const myBetAmount = gameState.bets.find((b) => b.userId === userId)?.amount;
+  const isFlying = gameState.phase === "flying";
+  const amt = parseFloat(amount) || 0;
+
+  const tabBtn = (label: string, active: boolean, onClick: () => void) => (
+    <button
+      onClick={onClick}
+      className="flex-1 py-1.5 text-xs font-bold rounded-md transition-all"
+      style={{
+        background: active ? "rgba(255,255,255,0.08)" : "transparent",
+        color: active ? "#fff" : "#555",
+        border: `1px solid ${active ? "rgba(255,255,255,0.15)" : "#1e1e2e"}`,
+      }}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div
       className="rounded-xl p-3 flex flex-col gap-2"
       style={{ background: "#151520", border: "1px solid #1e1e2e" }}
     >
-      {/* Tabs: Bet / Auto */}
+      {/* Tabs */}
       <div className="flex gap-1">
-        <button
-          className="flex-1 py-1 text-xs font-bold rounded-md transition-all"
-          style={{
-            background: !autoEnabled ? "rgba(224,49,49,0.15)" : "transparent",
-            color: !autoEnabled ? "#e03131" : "#555",
-            border: `1px solid ${!autoEnabled ? "rgba(224,49,49,0.3)" : "#222230"}`,
-          }}
-          onClick={() => setAutoEnabled(false)}
-        >
-          Bet
-        </button>
-        <button
-          className="flex-1 py-1 text-xs font-bold rounded-md transition-all"
-          style={{
-            background: autoEnabled ? "rgba(224,49,49,0.15)" : "transparent",
-            color: autoEnabled ? "#e03131" : "#555",
-            border: `1px solid ${autoEnabled ? "rgba(224,49,49,0.3)" : "#222230"}`,
-          }}
-          onClick={() => setAutoEnabled(true)}
-        >
-          Auto
-        </button>
+        {tabBtn("Bet", !autoEnabled, () => setAutoEnabled(false))}
+        {tabBtn("Auto", autoEnabled, () => setAutoEnabled(true))}
       </div>
 
-      {/* Amount input */}
+      {/* Amount row */}
       <div
         className="flex items-center rounded-lg overflow-hidden"
         style={{ background: "#0d0d18", border: "1px solid #2a2a3a" }}
       >
         <button
-          onClick={() => setAmount((v) => String(Math.max(1, parseFloat(v || "0") - 1)))}
-          className="px-3 py-2 text-lg font-bold transition-colors"
-          style={{ color: "#555" }}
+          onClick={() => setAmount((v) => String(Math.max(1, Math.round((parseFloat(v || "0") - 1) * 100) / 100)))}
+          className="px-3 py-2 text-base font-bold select-none"
+          style={{ color: "#666" }}
         >
           −
         </button>
@@ -132,9 +122,9 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex
           style={{ minWidth: 0 }}
         />
         <button
-          onClick={() => setAmount((v) => String(parseFloat(v || "0") + 1))}
-          className="px-3 py-2 text-lg font-bold transition-colors"
-          style={{ color: "#555" }}
+          onClick={() => setAmount((v) => String(Math.round((parseFloat(v || "0") + 1) * 100) / 100))}
+          className="px-3 py-2 text-base font-bold select-none"
+          style={{ color: "#666" }}
         >
           +
         </button>
@@ -149,7 +139,7 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex
             className="text-xs font-semibold rounded-md py-1 transition-colors"
             style={{ background: "#1a1a28", color: "#888", border: "1px solid #2a2a3a" }}
           >
-            {q}
+            {q >= 1000 ? `${q / 1000}K` : q.toFixed(2)}
           </button>
         ))}
       </div>
@@ -172,61 +162,100 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout, panelIndex
         </div>
       )}
 
-      {/* Error */}
       {error && <p className="text-xs text-center" style={{ color: "#e03131" }}>{error}</p>}
 
       {/* Action button */}
       {!userId ? (
         <button
-          className="w-full py-2.5 rounded-lg font-bold text-sm"
+          className="w-full py-3 rounded-xl font-bold text-sm"
           style={{ background: "#1a1a28", color: "#555", border: "1px solid #2a2a3a" }}
           disabled
         >
           Login to Play
         </button>
       ) : cashoutAvailable ? (
+        // CASHOUT button — green
         <button
           onClick={handleCashout}
           disabled={loading}
-          className="w-full py-2.5 rounded-lg font-black text-sm transition-all uppercase tracking-wide"
+          className="w-full py-3 rounded-xl font-black text-sm transition-all uppercase tracking-wide"
           style={{
-            background: loading ? "#555" : "linear-gradient(135deg, #c0392b 0%, #e74c3c 100%)",
+            background: loading ? "#2a5a3a" : "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
             color: "#fff",
-            boxShadow: loading ? "none" : "0 0 24px rgba(224,49,49,0.5)",
+            boxShadow: loading ? "none" : "0 0 28px rgba(34,197,94,0.45)",
           }}
         >
-          {loading ? "..." : `CASH OUT @ ${gameState.multiplier.toFixed(2)}x`}
+          {loading ? "..." : (
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-base font-black">CASH OUT</span>
+              <span className="text-xs font-bold opacity-80">{gameState.multiplier.toFixed(2)}x</span>
+            </span>
+          )}
         </button>
-      ) : betActive && !isWaiting ? (
+      ) : betActive && isFlying ? (
+        // Bet placed, waiting for outcome
         <button
           disabled
-          className="w-full py-2.5 rounded-lg font-bold text-sm"
-          style={{ background: "#1a1a28", color: "#666", border: "1px solid #2a2a3a" }}
+          className="w-full py-3 rounded-xl font-bold text-sm"
+          style={{ background: "#1a2a20", color: "#22c55e", border: "1px solid rgba(34,197,94,0.2)" }}
         >
-          BET PLACED {myBetAmount ? `(₹${myBetAmount})` : ""}
+          <span className="flex flex-col items-center leading-tight">
+            <span className="text-xs opacity-70">IN FLIGHT</span>
+            <span className="text-base font-black">{gameState.multiplier.toFixed(2)}x</span>
+          </span>
         </button>
       ) : isWaiting ? (
+        // BET button during waiting phase — green
         <button
           onClick={handleBet}
           disabled={loading || betActive}
-          className="w-full py-2.5 rounded-lg font-black text-sm transition-all uppercase tracking-wide"
+          className="w-full py-3 rounded-xl font-black text-sm transition-all"
           style={{
             background: betActive
-              ? "#1a1a28"
+              ? "#1a2a20"
               : loading
-              ? "#555"
-              : "linear-gradient(135deg, #1a7a3a 0%, #22c55e 100%)",
-            color: betActive ? "#555" : "#fff",
-            boxShadow: betActive ? "none" : loading ? "none" : "0 0 24px rgba(34,197,94,0.35)",
-            border: betActive ? "1px solid #2a2a3a" : "none",
+              ? "#2a5a3a"
+              : "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+            color: betActive ? "#22c55e" : "#fff",
+            boxShadow: betActive || loading ? "none" : "0 0 28px rgba(34,197,94,0.4)",
+            border: betActive ? "1px solid rgba(34,197,94,0.2)" : "none",
           }}
         >
-          {loading ? "..." : betActive ? "BET PLACED" : "BET"}
+          {loading ? "..." : betActive ? (
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-xs opacity-70">BET PLACED</span>
+              <span className="text-base font-black">{amt.toFixed(2)} KES</span>
+            </span>
+          ) : (
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-base font-black">BET</span>
+              <span className="text-xs font-bold opacity-85">{amt.toFixed(2)} KES</span>
+            </span>
+          )}
+        </button>
+      ) : isFlying && !betActive ? (
+        // BET NEXT button during flying (can queue for next round)
+        <button
+          onClick={handleBet}
+          disabled={loading}
+          className="w-full py-3 rounded-xl font-black text-sm transition-all"
+          style={{
+            background: loading ? "#2a5a3a" : "linear-gradient(135deg, #15803d 0%, #22c55e 100%)",
+            color: "#fff",
+            boxShadow: loading ? "none" : "0 0 28px rgba(34,197,94,0.4)",
+          }}
+        >
+          {loading ? "..." : (
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-base font-black">BET NEXT</span>
+              <span className="text-xs font-bold opacity-85">{amt.toFixed(2)} KES</span>
+            </span>
+          )}
         </button>
       ) : (
         <button
           disabled
-          className="w-full py-2.5 rounded-lg font-bold text-sm"
+          className="w-full py-3 rounded-xl font-bold text-sm"
           style={{ background: "#111118", color: "#3a3a4a", border: "1px solid #1e1e2e" }}
         >
           WAIT FOR NEXT ROUND
