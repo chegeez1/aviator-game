@@ -1,20 +1,41 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { pgTable, serial, text, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod/v4";
 
-export {}
+export const usersTable = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  balance: numeric("balance", { precision: 18, scale: 2 }).notNull().default("10000.00"),
+  totalWon: numeric("total_won", { precision: 18, scale: 2 }).notNull().default("0.00"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const roundsTable = pgTable("rounds", {
+  id: serial("id").primaryKey(),
+  crashMultiplier: numeric("crash_multiplier", { precision: 10, scale: 2 }).notNull(),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  endedAt: timestamp("ended_at"),
+});
+
+export const betsTable = pgTable("bets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  roundId: integer("round_id").references(() => roundsTable.id),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  cashoutMultiplier: numeric("cashout_multiplier", { precision: 10, scale: 2 }),
+  profit: numeric("profit", { precision: 18, scale: 2 }),
+  won: boolean("won"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true, totalWon: true });
+export const insertRoundSchema = createInsertSchema(roundsTable).omit({ id: true });
+export const insertBetSchema = createInsertSchema(betsTable).omit({ id: true, createdAt: true });
+
+export type User = typeof usersTable.$inferSelect;
+export type Round = typeof roundsTable.$inferSelect;
+export type Bet = typeof betsTable.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertRound = z.infer<typeof insertRoundSchema>;
+export type InsertBet = z.infer<typeof insertBetSchema>;
