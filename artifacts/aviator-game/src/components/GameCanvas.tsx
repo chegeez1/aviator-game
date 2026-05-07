@@ -63,7 +63,6 @@ function drawBiplane(
     ctx.beginPath(); ctx.moveTo(xo, -9); ctx.lineTo(xo - 4, 7); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(xo - 14, -30); ctx.lineTo(xo - 4, 7); ctx.stroke();
   }
-  // Cross-wire
   ctx.strokeStyle = "rgba(0,0,0,0.28)";
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(-6, -9); ctx.lineTo(-30, 7); ctx.stroke();
@@ -80,7 +79,6 @@ function drawBiplane(
   ctx.closePath();
   ctx.fill();
 
-  // Highlight stripe
   ctx.fillStyle = light;
   ctx.beginPath();
   ctx.moveTo(46, -2);
@@ -90,7 +88,7 @@ function drawBiplane(
   ctx.closePath();
   ctx.fill();
 
-  // Cockpit canopy
+  // Cockpit
   ctx.fillStyle = "rgba(160,220,255,0.32)";
   ctx.strokeStyle = dark;
   ctx.lineWidth = 1.5;
@@ -99,14 +97,12 @@ function drawBiplane(
   ctx.fill();
   ctx.stroke();
 
-  // Tail vertical
+  // Tail
   ctx.fillStyle = wing;
   ctx.beginPath();
   ctx.moveTo(-36, -2); ctx.lineTo(-50, -20); ctx.lineTo(-54, -15); ctx.lineTo(-50, -2);
   ctx.closePath();
   ctx.fill();
-
-  // Tail horizontal
   ctx.fillStyle = base;
   ctx.beginPath();
   ctx.moveTo(-38, 2); ctx.lineTo(-48, 14); ctx.lineTo(-52, 9); ctx.lineTo(-44, 2);
@@ -118,22 +114,15 @@ function drawBiplane(
     ctx.strokeStyle = dark;
     ctx.lineWidth = 2;
     for (const gx of [16, -2]) {
-      ctx.beginPath();
-      ctx.moveTo(gx, 9); ctx.lineTo(gx, 20);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gx, 9); ctx.lineTo(gx, 20); ctx.stroke();
       ctx.fillStyle = "#1a1a2e";
-      ctx.beginPath();
-      ctx.arc(gx + 1, 22, 5.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = "#444";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(gx + 1, 22, 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#444"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.strokeStyle = dark; ctx.lineWidth = 2;
     }
   }
 
-  // Exhaust puffs during flight
+  // Exhaust puffs
   if (!crashed && angle < -0.02) {
     const p = (Math.sin(tick * 0.25) + 1) * 0.5;
     ctx.fillStyle = `rgba(200,200,200,${0.05 + p * 0.07})`;
@@ -146,23 +135,22 @@ function drawBiplane(
 
 function drawSunburst(
   ctx: CanvasRenderingContext2D,
-  cx: number, cy: number, width: number, height: number,
-  intensity: number = 1
+  cx: number, cy: number, W: number, H: number, intensity: number = 1
 ) {
-  const numRays = 28;
-  const maxR = Math.sqrt(width * width + height * height);
+  const numRays = 30;
+  const maxR = Math.sqrt(W * W + H * H);
   ctx.save();
   ctx.translate(cx, cy);
   for (let i = 0; i < numRays; i++) {
     const a0 = (i / numRays) * Math.PI * 2;
-    const a1 = ((i + 0.42) / numRays) * Math.PI * 2;
-    const gx = Math.cos(a0) * maxR * 0.7;
-    const gy = Math.sin(a0) * maxR * 0.7;
+    const a1 = ((i + 0.40) / numRays) * Math.PI * 2;
+    const gx = Math.cos(a0) * maxR * 0.75;
+    const gy = Math.sin(a0) * maxR * 0.75;
     const g = ctx.createLinearGradient(0, 0, gx, gy);
-    g.addColorStop(0,    `rgba(255,255,255,0)`);
-    g.addColorStop(0.08, `rgba(255,255,255,${0.028 * intensity})`);
-    g.addColorStop(0.35, `rgba(255,255,255,${0.016 * intensity})`);
-    g.addColorStop(1,    `rgba(255,255,255,0)`);
+    g.addColorStop(0,    "rgba(255,255,255,0)");
+    g.addColorStop(0.06, `rgba(255,255,255,${0.032 * intensity})`);
+    g.addColorStop(0.3,  `rgba(255,255,255,${0.018 * intensity})`);
+    g.addColorStop(1,    "rgba(255,255,255,0)");
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.arc(0, 0, maxR, a0, a1);
@@ -194,98 +182,76 @@ export function GameCanvas({ gameState }: Props) {
     const tick = tickRef.current;
 
     ctx.clearRect(0, 0, W, H);
-
-    // Deep navy background (Spribe palette)
     ctx.fillStyle = "#0d0e1c";
     ctx.fillRect(0, 0, W, H);
 
     const { phase, multiplier, crashMultiplier, countdown } = gameState;
-    const padL = 58, padR = 40, padT = 72, padB = 52;
+    const padL = 56, padR = 36, padT = 68, padB = 50;
     const aW = W - padL - padR;
     const aH = H - padT - padB;
     const oX = padL;
     const oY = H - padB;
 
-    // ── WAITING ────────────────────────────────────────────────────────────────
+    // ── WAITING ───────────────────────────────────────────────────────────────
     if (phase === "waiting") {
       ptsRef.current = [];
       lastMultRef.current = 1.0;
 
-      // Sunburst from bottom-left quadrant (like Spribe)
-      drawSunburst(ctx, W * 0.35, H * 0.62, W, H, 1.4);
+      drawSunburst(ctx, W * 0.36, H * 0.60, W, H, 1.6);
 
-      // Inner glow circle
-      const innerG = ctx.createRadialGradient(W * 0.35, H * 0.62, 0, W * 0.35, H * 0.62, H * 0.45);
-      innerG.addColorStop(0, "rgba(80,40,120,0.18)");
-      innerG.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = innerG;
-      ctx.fillRect(0, 0, W, H);
-
-      // Edge vignette
-      const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.18, W / 2, H / 2, H * 0.88);
+      const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.15, W / 2, H / 2, H * 0.9);
       vg.addColorStop(0, "rgba(0,0,0,0)");
-      vg.addColorStop(1, "rgba(0,0,10,0.55)");
-      ctx.fillStyle = vg;
-      ctx.fillRect(0, 0, W, H);
+      vg.addColorStop(1, "rgba(0,0,15,0.6)");
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 
-      // Axes
+      // Axis
       ctx.strokeStyle = "rgba(255,255,255,0.07)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, oY); ctx.lineTo(W - padR, oY);
       ctx.stroke();
 
-      // Runway line
-      ctx.strokeStyle = "rgba(255,255,255,0.06)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([12, 8]);
-      ctx.beginPath();
-      ctx.moveTo(padL, oY - 1); ctx.lineTo(W - padR, oY - 1);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Taxi animation
+      // Taxi
       taxiXRef.current += 0.65;
       if (taxiXRef.current > aW * 0.5) taxiXRef.current = 0;
-      const tx = padL + 55 + taxiXRef.current;
+      const tx = padL + 60 + taxiXRef.current;
       const ty = oY - 28;
       const bob = Math.sin(tick * 0.1) * 1.5;
 
-      // Plane glow on ground
-      const pg = ctx.createRadialGradient(tx, oY, 0, tx, oY, 70);
-      pg.addColorStop(0, "rgba(224,49,49,0.14)");
+      const pg = ctx.createRadialGradient(tx, oY, 0, tx, oY, 75);
+      pg.addColorStop(0, "rgba(224,49,49,0.18)");
       pg.addColorStop(1, "rgba(224,49,49,0)");
-      ctx.fillStyle = pg; ctx.fillRect(tx - 80, oY - 8, 160, 50);
+      ctx.fillStyle = pg; ctx.fillRect(tx - 90, oY - 10, 180, 55);
 
-      drawBiplane(ctx, tx, ty + bob, 0, 0.6, false, tick);
+      drawBiplane(ctx, tx, ty + bob, 0, 0.62, false, tick);
 
-      // Countdown text
+      // Countdown
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillStyle = "rgba(255,255,255,0.48)";
       ctx.font = "600 12px Inter, sans-serif";
       ctx.letterSpacing = "2px";
-      ctx.fillText("NEXT ROUND IN", W / 2, H / 2 - 28);
+      ctx.fillText("NEXT ROUND IN", W / 2, H / 2 - 30);
       ctx.letterSpacing = "0";
 
       const cSize = Math.round(Math.max(H * 0.115, 42));
       ctx.shadowColor = "#e03131";
-      ctx.shadowBlur = 28;
+      ctx.shadowBlur = 30;
       ctx.fillStyle = "#e03131";
       ctx.font = `bold ${cSize}px Inter, sans-serif`;
-      ctx.fillText(`${countdown.toFixed(1)}s`, W / 2, H / 2 + 36);
+      ctx.fillText(`${countdown.toFixed(1)}s`, W / 2, H / 2 + 38);
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
       ctx.font = "600 10px Inter, sans-serif";
       ctx.letterSpacing = "3px";
-      ctx.fillText("PLACING BETS", W / 2, H / 2 + 64);
+      ctx.fillText("PLACING BETS", W / 2, H / 2 + 66);
       ctx.letterSpacing = "0";
       return;
     }
 
-    // ── FLYING / CRASHED ───────────────────────────────────────────────────────
+    // ── FLYING / CRASHED ──────────────────────────────────────────────────────
     const mult = phase === "crashed" && crashMultiplier ? crashMultiplier : multiplier;
-    const maxD = Math.max(mult * 1.6 + 0.5, 2.5);
+    const maxD = Math.max(mult * 1.55 + 0.4, 2.5);
 
     if (phase === "flying" && mult > lastMultRef.current) {
       lastMultRef.current = mult;
@@ -306,24 +272,24 @@ export function GameCanvas({ gameState }: Props) {
     const lastP = pts.length > 0 ? pts[pts.length - 1] : { x: oX, y: oY };
 
     // Sunburst from plane tip
-    drawSunburst(ctx, lastP.x, lastP.y, W, H, phase === "crashed" ? 0.6 : 1.2);
+    drawSunburst(ctx, lastP.x, lastP.y, W, H, phase === "crashed" ? 0.7 : 1.4);
 
-    // Purple-tinted inner glow behind plane
+    // Purple inner bloom
     if (phase === "flying") {
-      const ig = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, H * 0.55);
-      ig.addColorStop(0, "rgba(60,20,90,0.22)");
+      const ig = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, H * 0.6);
+      ig.addColorStop(0, "rgba(50,15,80,0.26)");
       ig.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = ig; ctx.fillRect(0, 0, W, H);
     }
 
-    // Edge vignette
-    const vg2 = ctx.createRadialGradient(W / 2, H / 2, H * 0.14, W / 2, H / 2, H * 0.82);
+    // Vignette
+    const vg2 = ctx.createRadialGradient(W / 2, H / 2, H * 0.12, W / 2, H / 2, H * 0.85);
     vg2.addColorStop(0, "rgba(0,0,0,0)");
-    vg2.addColorStop(1, "rgba(0,0,10,0.6)");
+    vg2.addColorStop(1, "rgba(0,0,15,0.65)");
     ctx.fillStyle = vg2; ctx.fillRect(0, 0, W, H);
 
     // Grid
-    ctx.strokeStyle = "rgba(255,255,255,0.045)";
+    ctx.strokeStyle = "rgba(255,255,255,0.04)";
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 10]);
     for (let i = 1; i <= 4; i++) {
@@ -344,31 +310,33 @@ export function GameCanvas({ gameState }: Props) {
     ctx.stroke();
 
     // Y-axis labels
-    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
     ctx.font = "bold 11px Inter, sans-serif";
     ctx.textAlign = "right";
     for (let i = 0; i <= 4; i++) {
       const val = 1 + ((maxD - 1) * i) / 4;
       const y   = oY - (aH * i) / 4;
-      ctx.fillText(`${val.toFixed(1)}x`, padL - 6, y + 4);
+      ctx.fillText(`${val.toFixed(1)}x`, padL - 5, y + 4);
     }
 
     if (pts.length >= 2) {
-      // Fill under curve
+      // HEAVY gradient fill — matches Spribe's prominent red area
       const grad = ctx.createLinearGradient(0, padT, 0, oY);
       if (phase === "crashed") {
-        grad.addColorStop(0,   "rgba(140,15,15,0.35)");
-        grad.addColorStop(0.7, "rgba(100,5,5,0.10)");
-        grad.addColorStop(1,   "rgba(60,0,0,0.01)");
+        grad.addColorStop(0,   "rgba(180,15,15,0.55)");
+        grad.addColorStop(0.5, "rgba(140,5,5,0.25)");
+        grad.addColorStop(1,   "rgba(80,0,0,0.04)");
       } else {
-        grad.addColorStop(0,   "rgba(224,49,49,0.32)");
-        grad.addColorStop(0.5, "rgba(224,49,49,0.10)");
-        grad.addColorStop(1,   "rgba(224,49,49,0.01)");
+        grad.addColorStop(0,   "rgba(224,49,49,0.55)");
+        grad.addColorStop(0.4, "rgba(200,30,30,0.28)");
+        grad.addColorStop(0.8, "rgba(160,10,10,0.10)");
+        grad.addColorStop(1,   "rgba(100,0,0,0.02)");
       }
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.lineTo(lastP.x, oY); ctx.lineTo(pts[0].x, oY);
+      ctx.lineTo(lastP.x, oY);
+      ctx.lineTo(pts[0].x, oY);
       ctx.closePath();
       ctx.fillStyle = grad;
       ctx.fill();
@@ -377,78 +345,82 @@ export function GameCanvas({ gameState }: Props) {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.shadowColor = phase === "crashed" ? "transparent" : "#ff3030";
-      ctx.shadowBlur  = phase === "crashed" ? 0 : 20;
+      ctx.shadowColor = phase === "crashed" ? "transparent" : "#ff2020";
+      ctx.shadowBlur  = phase === "crashed" ? 0 : 22;
       ctx.strokeStyle = phase === "crashed" ? "#5a2020" : "#e03131";
-      ctx.lineWidth   = 3.5;
+      ctx.lineWidth   = 4;
       ctx.lineJoin    = "round";
       ctx.lineCap     = "round";
       ctx.stroke();
       ctx.shadowBlur  = 0;
 
-      // Dashed current-multiplier guide line (flying only)
+      // Dashed horizontal guide (flying)
       if (phase === "flying") {
-        ctx.strokeStyle = "rgba(224,49,49,0.22)";
+        ctx.strokeStyle = "rgba(224,49,49,0.18)";
         ctx.lineWidth   = 1;
         ctx.setLineDash([5, 7]);
         ctx.beginPath();
-        ctx.moveTo(padL, lastP.y); ctx.lineTo(lastP.x, lastP.y);
+        ctx.moveTo(padL, lastP.y); ctx.lineTo(lastP.x - 60, lastP.y);
         ctx.stroke();
         ctx.setLineDash([]);
       }
     }
 
-    // Biplane at curve tip (flying)
+    // Biplane at tip
     if (phase === "flying" && pts.length >= 2) {
       const p1 = pts[pts.length - 2];
       const angle = Math.atan2(lastP.y - p1.y, lastP.x - p1.x);
 
-      // Red glow halo
-      const halo = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, 90);
-      halo.addColorStop(0, "rgba(224,49,49,0.25)");
+      const halo = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, 95);
+      halo.addColorStop(0, "rgba(224,49,49,0.28)");
       halo.addColorStop(1, "rgba(224,49,49,0)");
       ctx.fillStyle = halo;
-      ctx.beginPath(); ctx.arc(lastP.x, lastP.y, 90, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(lastP.x, lastP.y, 95, 0, Math.PI * 2); ctx.fill();
 
-      drawBiplane(ctx, lastP.x, lastP.y, angle, 0.65, false, tick);
+      drawBiplane(ctx, lastP.x, lastP.y, angle, 0.68, false, tick);
     }
 
-    // ── CRASH OVERLAY ──────────────────────────────────────────────────────────
+    // ── CRASH ─────────────────────────────────────────────────────────────────
     if (phase === "crashed") {
       ctx.fillStyle = "rgba(100,0,0,0.1)";
       ctx.fillRect(0, 0, W, H);
 
-      const fs  = Math.round(Math.max(H * 0.09, 34));
-      const ms  = Math.round(Math.max(H * 0.115, 44));
-      const mid = H * 0.46;
+      const fs = Math.round(Math.max(H * 0.088, 32));
+      const ms = Math.round(Math.max(H * 0.11, 42));
+      const mid = H * 0.45;
 
       ctx.textAlign = "center";
       ctx.shadowColor = "rgba(224,49,49,0.95)";
-      ctx.shadowBlur  = 36;
+      ctx.shadowBlur  = 38;
       ctx.fillStyle   = "#e03131";
       ctx.font = `bold ${fs}px Inter, sans-serif`;
       ctx.fillText("FLEW AWAY!", W / 2, mid);
       ctx.font = `bold ${ms}px Inter, sans-serif`;
       ctx.fillText(`${(crashMultiplier ?? 1).toFixed(2)}x`, W / 2, mid + ms * 0.95);
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur  = 0;
     }
 
-    // ── LIVE MULTIPLIER ────────────────────────────────────────────────────────
+    // ── LIVE MULTIPLIER — positioned near the plane tip ────────────────────────
     if (phase === "flying") {
-      const ms  = Math.round(Math.max(H * 0.13, 48));
-      const mid = H / 2 + ms * 0.32;
+      const ms = Math.round(Math.max(H * 0.125, 46));
 
-      ctx.textAlign = "center";
+      // Position: slightly above and to the left of the plane
+      // At early flight, plane is near center; as mult grows it moves right+up
+      // We place text where it's always readable — 40px left of plane, 60px above
+      const textX = Math.min(lastP.x + 10, W - 120);
+      const textY = Math.max(lastP.y - 55, padT + ms);
+
+      ctx.textAlign = "left";
       ctx.shadowColor = "rgba(255,255,255,0.4)";
-      ctx.shadowBlur  = 22;
+      ctx.shadowBlur  = 24;
       ctx.fillStyle   = "#ffffff";
       ctx.font = `bold ${ms}px Inter, sans-serif`;
-      ctx.fillText(`${multiplier.toFixed(2)}x`, W / 2, mid);
-      ctx.shadowBlur = 0;
+      ctx.fillText(`${multiplier.toFixed(2)}x`, textX - ms * 1.8, textY);
+      ctx.shadowBlur  = 0;
+      ctx.textAlign   = "left";
     }
   }, [gameState]);
 
-  // Resize
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
@@ -469,7 +441,6 @@ export function GameCanvas({ gameState }: Props) {
     return () => ro.disconnect();
   }, []);
 
-  // Animation loop
   useEffect(() => {
     const loop = () => { draw(); animRef.current = requestAnimationFrame(loop); };
     animRef.current = requestAnimationFrame(loop);
