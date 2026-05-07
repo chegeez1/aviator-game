@@ -8,7 +8,7 @@ export interface FullGameState {
   crashMultiplier: number | null;
   roundId: number | null;
   countdown: number;
-  bets: ActiveBetInfo[];
+  bets: (ActiveBetInfo & { freeBet?: boolean })[];
   history: Round[];
   connected: boolean;
 }
@@ -62,7 +62,7 @@ export function useGameState() {
           next = { ...next, countdown: (msg.countdown as number) ?? 0 };
           break;
         case "round_start":
-          next = { ...next, phase: "flying", multiplier: 1.0, roundId: (msg.roundId as number) ?? null };
+          next = { ...next, phase: "flying", multiplier: 1.0, bets: prev.bets, roundId: (msg.roundId as number) ?? null };
           break;
         case "multiplier":
           next = { ...next, multiplier: (msg.multiplier as number) ?? 1.0 };
@@ -76,13 +76,16 @@ export function useGameState() {
             startedAt: new Date().toISOString(),
             endedAt: new Date().toISOString(),
           };
-          next.history = [newRound, ...prev.history].slice(0, 20);
+          next.history = [newRound, ...prev.history].slice(0, 30);
           break;
         }
         case "bet_placed": {
-          const b = msg as unknown as { userId: number; username: string; amount: number; autoCashout: number | null };
-          const newBet: ActiveBetInfo = { userId: b.userId, username: b.username, amount: b.amount, cashedOut: false, cashoutMultiplier: null };
-          next.bets = [...prev.bets, newBet];
+          const b = msg as unknown as { userId: number; username: string; amount: number; autoCashout: number | null; freeBet?: boolean };
+          const exists = prev.bets.some(x => x.userId === b.userId);
+          if (!exists) {
+            const newBet = { userId: b.userId, username: b.username, amount: b.amount, cashedOut: false, cashoutMultiplier: null, freeBet: b.freeBet };
+            next.bets = [...prev.bets, newBet];
+          }
           break;
         }
         case "cashout": {
@@ -102,6 +105,7 @@ export function useGameState() {
   }, []);
 
   const { wsRef } = useWebSocket(onMessage);
+  void wsRef;
 
   return { gameState, connected };
 }

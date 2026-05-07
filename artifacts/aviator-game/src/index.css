@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --bg-deep:   #0d0e1c;
-  --bg-main:   #12131f;
-  --bg-panel:  #1a1b2c;
-  --bg-card:   #1e2035;
-  --bg-input:  #0d0e1c;
-  --border:    #2a2b42;
-  --border-hi: #353650;
+  --bg-deep:   #0d0d0d;
+  --bg-main:   #111111;
+  --bg-panel:  #161616;
+  --bg-card:   #1c1c1c;
+  --bg-input:  #0d0d0d;
+  --border:    #282828;
+  --border-hi: #333333;
   --red:       #e03131;
   --green:     #22c55e;
   --text-dim:  rgba(255,255,255,0.35);
@@ -31,7 +31,7 @@ html, body, #root {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track  { background: var(--bg-panel); }
 ::-webkit-scrollbar-thumb  { background: var(--border-hi); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #454660; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3e; }
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }

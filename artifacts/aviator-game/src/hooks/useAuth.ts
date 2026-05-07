@@ -27,14 +27,14 @@ export function useAuth() {
 
   useEffect(() => { loadMe(); }, [loadMe]);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const data = await api.login(username, password);
+  const login = useCallback(async (phone: string, password: string) => {
+    const data = await api.login(phone, password);
     localStorage.setItem("aviator_token", data.token);
     setUser({ id: data.user.id, username: data.user.username, balance: data.user.balance });
   }, []);
 
-  const register = useCallback(async (username: string, password: string) => {
-    const data = await api.register(username, password);
+  const register = useCallback(async (phone: string, password: string) => {
+    const data = await api.register(phone, password);
     localStorage.setItem("aviator_token", data.token);
     setUser({ id: data.user.id, username: data.user.username, balance: data.user.balance });
   }, []);

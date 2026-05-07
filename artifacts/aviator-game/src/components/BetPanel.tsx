@@ -7,10 +7,11 @@ interface Props {
   userId: number | null;
   onBetPlaced: () => void;
   onCashout: () => void;
+  onAuthClick?: () => void;
   panelIndex?: number;
 }
 
-export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
+export function BetPanel({ gameState, userId, onBetPlaced, onCashout, onAuthClick }: Props) {
   const [amount, setAmount]             = useState("20");
   const [autoCashout, setAutoCashout]   = useState("");
   const [autoEnabled, setAutoEnabled]   = useState(false);
@@ -64,7 +65,7 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
   return (
     <div
       className="rounded-xl p-3 flex flex-col gap-2"
-      style={{ background: "#1e2035", border: "1px solid #2a2b42" }}
+      style={{ background: "#1c1c1c", border: "1px solid #282828" }}
     >
       {/* Tabs */}
       <div className="flex gap-1">
@@ -76,9 +77,9 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
               onClick={() => setAutoEnabled(label === "Auto")}
               className="flex-1 py-1.5 text-xs font-bold rounded-lg transition-all"
               style={{
-                background: active ? "rgba(255,255,255,0.07)" : "transparent",
-                color: active ? "#ccc" : "#44445a",
-                border: `1px solid ${active ? "#353650" : "transparent"}`,
+                background: active ? "rgba(255,255,255,0.06)" : "transparent",
+                color: active ? "#cccccc" : "#444444",
+                border: `1px solid ${active ? "#333333" : "transparent"}`,
               }}
             >
               {label}
@@ -90,12 +91,12 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
       {/* Amount row */}
       <div
         className="flex items-center rounded-xl overflow-hidden"
-        style={{ background: "#0d0e1c", border: "1px solid #2a2b42" }}
+        style={{ background: "#0d0d0d", border: "1px solid #282828" }}
       >
         <button
           onClick={() => setAmount(v => String(Math.max(1, Math.round((parseFloat(v||"0") - 1)*100)/100)))}
           className="px-3 py-2 text-lg font-bold select-none"
-          style={{ color: "#44445a" }}
+          style={{ color: "#444444" }}
         >−</button>
         <input
           type="number"
@@ -107,7 +108,7 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
         <button
           onClick={() => setAmount(v => String(Math.round((parseFloat(v||"0") + 1)*100)/100))}
           className="px-3 py-2 text-lg font-bold select-none"
-          style={{ color: "#44445a" }}
+          style={{ color: "#444444" }}
         >+</button>
       </div>
 
@@ -118,7 +119,7 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
             key={q}
             onClick={() => setAmount(String(q))}
             className="text-xs font-semibold rounded-lg py-1 transition-all"
-            style={{ background: "#252638", color: "#6668aa", border: "1px solid #2a2b42" }}
+            style={{ background: "#222222", color: "#606060", border: "1px solid #282828" }}
           >
             {q >= 1000 ? `${q/1000},000.00` : `${q}.00`}
           </button>
@@ -129,26 +130,30 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
       {autoEnabled && (
         <div
           className="flex items-center gap-2 rounded-xl px-3 py-1.5"
-          style={{ background: "#0d0e1c", border: "1px solid #2a2b42" }}
+          style={{ background: "#0d0d0d", border: "1px solid #282828" }}
         >
-          <span className="text-xs whitespace-nowrap" style={{ color: "#44445a" }}>Auto @</span>
+          <span className="text-xs whitespace-nowrap" style={{ color: "#444444" }}>Auto @</span>
           <input
             type="number" placeholder="2.00" value={autoCashout}
             onChange={e => setAutoCashout(e.target.value)}
             className="flex-1 text-center text-sm font-bold bg-transparent text-white outline-none"
           />
-          <span className="text-xs" style={{ color: "#44445a" }}>x</span>
+          <span className="text-xs" style={{ color: "#444444" }}>x</span>
         </div>
       )}
 
-      {error && <p className="text-xs text-center" style={{ color: "#e03131" }}>{error}</p>}
+  {error && <p className="text-xs text-center" style={{ color: "#e03131" }}>{error}</p>}
 
       {/* Action button */}
       {!userId ? (
         <button
-          disabled
-          className="w-full py-3 rounded-xl font-bold text-sm"
-          style={{ background: "#1a1b2c", color: "#44445a", border: "1px solid #2a2b42" }}
+          onClick={onAuthClick}
+          className="w-full py-3 rounded-xl font-bold text-sm transition-all"
+          style={{
+            background: "rgba(224,49,49,0.10)",
+            color: "#e03131",
+            border: "1px solid rgba(224,49,49,0.22)",
+          }}
         >
           Login to Play
         </button>
@@ -224,7 +229,7 @@ export function BetPanel({ gameState, userId, onBetPlaced, onCashout }: Props) {
 
       ) : (
         <button disabled className="w-full py-3 rounded-xl font-bold text-sm"
-          style={{ background: "#12131f", color: "#33334a", border: "1px solid #1e2035" }}>
+          style={{ background: "#111111", color: "#333333", border: "1px solid #1c1c1c" }}>
           WAIT FOR NEXT ROUND
         </button>
       )}

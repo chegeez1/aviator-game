@@ -20,7 +20,6 @@ function drawBiplane(
   const dark  = crashed ? "#6a0f0f" : "#8b0000";
   const light = crashed ? "#cc2222" : "#ff5555";
 
-  // Spinning propeller
   const pAngle = (tick * 0.45) % (Math.PI * 2);
   ctx.save();
   ctx.translate(54, 0);
@@ -36,27 +35,23 @@ function drawBiplane(
   }
   ctx.restore();
 
-  // Engine nacelle
   ctx.fillStyle = dark;
   ctx.beginPath();
   ctx.ellipse(46, 0, 11, 7.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Lower wing
   ctx.fillStyle = wing;
   ctx.beginPath();
   ctx.moveTo(12, 7); ctx.lineTo(-28, 7); ctx.lineTo(-38, 24); ctx.lineTo(-8, 24);
   ctx.closePath();
   ctx.fill();
 
-  // Upper wing
   ctx.fillStyle = base;
   ctx.beginPath();
   ctx.moveTo(20, -9); ctx.lineTo(-24, -9); ctx.lineTo(-38, -30); ctx.lineTo(-4, -30);
   ctx.closePath();
   ctx.fill();
 
-  // Wing struts
   ctx.strokeStyle = dark;
   ctx.lineWidth = 2;
   for (const xo of [-6, -18]) {
@@ -68,7 +63,6 @@ function drawBiplane(
   ctx.beginPath(); ctx.moveTo(-6, -9); ctx.lineTo(-30, 7); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(-24, -9); ctx.lineTo(-8, 7); ctx.stroke();
 
-  // Fuselage
   ctx.fillStyle = base;
   ctx.beginPath();
   ctx.moveTo(54, 0);
@@ -88,7 +82,6 @@ function drawBiplane(
   ctx.closePath();
   ctx.fill();
 
-  // Cockpit
   ctx.fillStyle = "rgba(160,220,255,0.32)";
   ctx.strokeStyle = dark;
   ctx.lineWidth = 1.5;
@@ -97,7 +90,6 @@ function drawBiplane(
   ctx.fill();
   ctx.stroke();
 
-  // Tail
   ctx.fillStyle = wing;
   ctx.beginPath();
   ctx.moveTo(-36, -2); ctx.lineTo(-50, -20); ctx.lineTo(-54, -15); ctx.lineTo(-50, -2);
@@ -109,20 +101,18 @@ function drawBiplane(
   ctx.closePath();
   ctx.fill();
 
-  // Landing gear (taxi only)
   if (!crashed && angle === 0) {
     ctx.strokeStyle = dark;
     ctx.lineWidth = 2;
     for (const gx of [16, -2]) {
       ctx.beginPath(); ctx.moveTo(gx, 9); ctx.lineTo(gx, 20); ctx.stroke();
-      ctx.fillStyle = "#1a1a2e";
+      ctx.fillStyle = "#141414";
       ctx.beginPath(); ctx.arc(gx + 1, 22, 5.5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "#444"; ctx.lineWidth = 1; ctx.stroke();
       ctx.strokeStyle = dark; ctx.lineWidth = 2;
     }
   }
 
-  // Exhaust puffs
   if (!crashed && angle < -0.02) {
     const p = (Math.sin(tick * 0.25) + 1) * 0.5;
     ctx.fillStyle = `rgba(200,200,200,${0.05 + p * 0.07})`;
@@ -133,23 +123,25 @@ function drawBiplane(
   ctx.restore();
 }
 
+// Sunburst always from fixed origin — key to matching the reference exactly
 function drawSunburst(
   ctx: CanvasRenderingContext2D,
   cx: number, cy: number, W: number, H: number, intensity: number = 1
 ) {
-  const numRays = 30;
+  const numRays = 32;
   const maxR = Math.sqrt(W * W + H * H);
   ctx.save();
   ctx.translate(cx, cy);
   for (let i = 0; i < numRays; i++) {
     const a0 = (i / numRays) * Math.PI * 2;
-    const a1 = ((i + 0.40) / numRays) * Math.PI * 2;
-    const gx = Math.cos(a0) * maxR * 0.75;
-    const gy = Math.sin(a0) * maxR * 0.75;
+    const a1 = ((i + 0.38) / numRays) * Math.PI * 2;
+    const gx = Math.cos(a0) * maxR;
+    const gy = Math.sin(a0) * maxR;
     const g = ctx.createLinearGradient(0, 0, gx, gy);
     g.addColorStop(0,    "rgba(255,255,255,0)");
-    g.addColorStop(0.06, `rgba(255,255,255,${0.032 * intensity})`);
-    g.addColorStop(0.3,  `rgba(255,255,255,${0.018 * intensity})`);
+    g.addColorStop(0.03, `rgba(255,255,255,${0.055 * intensity})`);
+    g.addColorStop(0.18, `rgba(255,255,255,${0.028 * intensity})`);
+    g.addColorStop(0.5,  `rgba(255,255,255,${0.010 * intensity})`);
     g.addColorStop(1,    "rgba(255,255,255,0)");
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -182,8 +174,8 @@ export function GameCanvas({ gameState }: Props) {
     const tick = tickRef.current;
 
     ctx.clearRect(0, 0, W, H);
-    // Very dark charcoal matching Spribe reference (less blue-tinted than before)
-    ctx.fillStyle = "#111118";
+    // Pure neutral charcoal — R=G=B, no colour cast whatsoever
+    ctx.fillStyle = "#141414";
     ctx.fillRect(0, 0, W, H);
 
     const { phase, multiplier, crashMultiplier, countdown } = gameState;
@@ -198,21 +190,21 @@ export function GameCanvas({ gameState }: Props) {
       ptsRef.current = [];
       lastMultRef.current = 1.0;
 
-      drawSunburst(ctx, W * 0.36, H * 0.60, W, H, 1.6);
+      // Sunburst from chart origin (bottom-left axis crossing)
+      drawSunburst(ctx, oX, oY, W, H, 1.9);
 
+      // Pure black vignette — no colour tint
       const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.15, W / 2, H / 2, H * 0.9);
       vg.addColorStop(0, "rgba(0,0,0,0)");
-      vg.addColorStop(1, "rgba(0,0,15,0.6)");
+      vg.addColorStop(1, "rgba(0,0,0,0.58)");
       ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 
-      // Axis
-      ctx.strokeStyle = "rgba(255,255,255,0.07)";
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(padL, padT); ctx.lineTo(padL, oY); ctx.lineTo(W - padR, oY);
       ctx.stroke();
 
-      // Taxi
       taxiXRef.current += 0.65;
       if (taxiXRef.current > aW * 0.5) taxiXRef.current = 0;
       const tx = padL + 60 + taxiXRef.current;
@@ -226,9 +218,8 @@ export function GameCanvas({ gameState }: Props) {
 
       drawBiplane(ctx, tx, ty + bob, 0, 0.62, false, tick);
 
-      // Countdown
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(255,255,255,0.48)";
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
       ctx.font = "600 12px Inter, sans-serif";
       ctx.letterSpacing = "2px";
       ctx.fillText("NEXT ROUND IN", W / 2, H / 2 - 30);
@@ -242,7 +233,7 @@ export function GameCanvas({ gameState }: Props) {
       ctx.fillText(`${countdown.toFixed(1)}s`, W / 2, H / 2 + 38);
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = "rgba(255,255,255,0.16)";
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
       ctx.font = "600 10px Inter, sans-serif";
       ctx.letterSpacing = "3px";
       ctx.fillText("PLACING BETS", W / 2, H / 2 + 66);
@@ -272,24 +263,15 @@ export function GameCanvas({ gameState }: Props) {
     const pts   = ptsRef.current;
     const lastP = pts.length > 0 ? pts[pts.length - 1] : { x: oX, y: oY };
 
-    // Sunburst from plane tip
-    drawSunburst(ctx, lastP.x, lastP.y, W, H, phase === "crashed" ? 0.7 : 1.4);
+    // Sunburst ALWAYS from chart origin (oX, oY) — matches reference
+    drawSunburst(ctx, oX, oY, W, H, phase === "crashed" ? 0.6 : 1.6);
 
-    // Purple inner bloom
-    if (phase === "flying") {
-      const ig = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, H * 0.6);
-      ig.addColorStop(0, "rgba(50,15,80,0.26)");
-      ig.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = ig; ctx.fillRect(0, 0, W, H);
-    }
-
-    // Vignette
+    // Pure black vignette — no colour tint
     const vg2 = ctx.createRadialGradient(W / 2, H / 2, H * 0.12, W / 2, H / 2, H * 0.85);
     vg2.addColorStop(0, "rgba(0,0,0,0)");
-    vg2.addColorStop(1, "rgba(0,0,15,0.65)");
+    vg2.addColorStop(1, "rgba(0,0,0,0.62)");
     ctx.fillStyle = vg2; ctx.fillRect(0, 0, W, H);
 
-    // Grid
     ctx.strokeStyle = "rgba(255,255,255,0.04)";
     ctx.lineWidth = 1;
     ctx.setLineDash([4, 10]);
@@ -303,14 +285,12 @@ export function GameCanvas({ gameState }: Props) {
     }
     ctx.setLineDash([]);
 
-    // Axes
     ctx.strokeStyle = "rgba(255,255,255,0.10)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padL, padT); ctx.lineTo(padL, oY); ctx.lineTo(W - padR, oY);
     ctx.stroke();
 
-    // Y-axis labels
     ctx.fillStyle = "rgba(255,255,255,0.18)";
     ctx.font = "bold 11px Inter, sans-serif";
     ctx.textAlign = "right";
@@ -321,21 +301,20 @@ export function GameCanvas({ gameState }: Props) {
     }
 
     if (pts.length >= 2) {
-      // SOLID red mountain fill — matches Spribe's dramatic red hill shape
-      // Fill from curve down to baseline, using the curve shape as top edge
-      const topY = pts[pts.length - 1].y; // highest point reached
+      // Vivid red fill under the curve
+      const topY = pts[pts.length - 1].y;
       const grad = ctx.createLinearGradient(0, topY, 0, oY);
       if (phase === "crashed") {
-        grad.addColorStop(0,    "rgba(160,10,10,0.80)");
-        grad.addColorStop(0.35, "rgba(130,5,5,0.55)");
-        grad.addColorStop(0.7,  "rgba(90,0,0,0.22)");
-        grad.addColorStop(1,    "rgba(50,0,0,0.04)");
+        grad.addColorStop(0,    "rgba(150,10,10,0.82)");
+        grad.addColorStop(0.35, "rgba(120,5,5,0.55)");
+        grad.addColorStop(0.7,  "rgba(80,0,0,0.20)");
+        grad.addColorStop(1,    "rgba(40,0,0,0.04)");
       } else {
-        grad.addColorStop(0,    "rgba(220,40,40,0.88)");
-        grad.addColorStop(0.25, "rgba(200,25,25,0.65)");
-        grad.addColorStop(0.6,  "rgba(160,10,10,0.28)");
-        grad.addColorStop(0.85, "rgba(100,5,5,0.08)");
-        grad.addColorStop(1,    "rgba(60,0,0,0.01)");
+        grad.addColorStop(0,    "rgba(224,30,30,0.92)");
+        grad.addColorStop(0.22, "rgba(200,20,20,0.70)");
+        grad.addColorStop(0.55, "rgba(160,10,10,0.32)");
+        grad.addColorStop(0.82, "rgba(100,5,5,0.10)");
+        grad.addColorStop(1,    "rgba(60,0,0,0.02)");
       }
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
@@ -346,12 +325,11 @@ export function GameCanvas({ gameState }: Props) {
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Bright red curve line on top
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.shadowColor = phase === "crashed" ? "transparent" : "#ff2020";
-      ctx.shadowBlur  = phase === "crashed" ? 0 : 18;
+      ctx.shadowBlur  = phase === "crashed" ? 0 : 16;
       ctx.strokeStyle = phase === "crashed" ? "#4a1818" : "#e03131";
       ctx.lineWidth   = 3.5;
       ctx.lineJoin    = "round";
@@ -360,23 +338,22 @@ export function GameCanvas({ gameState }: Props) {
       ctx.shadowBlur  = 0;
     }
 
-    // Biplane at tip
     if (phase === "flying" && pts.length >= 2) {
       const p1 = pts[pts.length - 2];
       const angle = Math.atan2(lastP.y - p1.y, lastP.x - p1.x);
 
-      const halo = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, 95);
-      halo.addColorStop(0, "rgba(224,49,49,0.28)");
+      const halo = ctx.createRadialGradient(lastP.x, lastP.y, 0, lastP.x, lastP.y, 80);
+      halo.addColorStop(0, "rgba(224,49,49,0.22)");
       halo.addColorStop(1, "rgba(224,49,49,0)");
       ctx.fillStyle = halo;
-      ctx.beginPath(); ctx.arc(lastP.x, lastP.y, 95, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(lastP.x, lastP.y, 80, 0, Math.PI * 2); ctx.fill();
 
       drawBiplane(ctx, lastP.x, lastP.y, angle, 0.68, false, tick);
     }
 
     // ── CRASH ─────────────────────────────────────────────────────────────────
     if (phase === "crashed") {
-      ctx.fillStyle = "rgba(100,0,0,0.1)";
+      ctx.fillStyle = "rgba(80,0,0,0.12)";
       ctx.fillRect(0, 0, W, H);
 
       const fs = Math.round(Math.max(H * 0.088, 32));
@@ -394,10 +371,9 @@ export function GameCanvas({ gameState }: Props) {
       ctx.shadowBlur  = 0;
     }
 
-    // ── LIVE MULTIPLIER — large, centered above the curve, matching Spribe ──────
+    // ── LIVE MULTIPLIER ────────────────────────────────────────────────────────
     if (phase === "flying") {
       const ms = Math.round(Math.max(H * 0.13, 50));
-      // Place at horizontal center of canvas, vertically in upper 40% of canvas
       const textX = W / 2;
       const textY = Math.max(lastP.y - 30, padT + ms + 10);
 

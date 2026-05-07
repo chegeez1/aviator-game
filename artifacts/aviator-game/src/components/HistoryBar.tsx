@@ -5,9 +5,9 @@ interface Props {
 }
 
 function pillStyle(mult: number): { bg: string; shadow: string } {
-  if (mult < 2)   return { bg: "#1976d2", shadow: "rgba(25,118,210,0.6)" };    // vibrant blue  — low
-  if (mult < 10)  return { bg: "#e91e63", shadow: "rgba(233,30,99,0.6)" };     // hot pink      — medium
-  return                 { bg: "#7c3aed", shadow: "rgba(124,58,237,0.6)" };    // vivid purple  — high
+  if (mult < 2)   return { bg: "#1565c0", shadow: "rgba(21,101,192,0.75)" };
+  if (mult < 10)  return { bg: "#c62828", shadow: "rgba(198,40,40,0.75)" };
+  return                 { bg: "#6a1b9a", shadow: "rgba(106,27,154,0.75)" };
 }
 
 export function HistoryBar({ history }: Props) {
@@ -16,13 +16,13 @@ export function HistoryBar({ history }: Props) {
       className="flex items-center gap-1.5 px-3 overflow-x-auto shrink-0"
       style={{
         height: 36,
-        background: "#14152a",
-        borderBottom: "1px solid #2a2b42",
+        background: "#111111",
+        borderBottom: "1px solid #282828",
         scrollbarWidth: "none",
       }}
     >
       {history.length === 0 && (
-        <span className="text-xs" style={{ color: "#3a3b55" }}>No history yet</span>
+        <span className="text-xs" style={{ color: "#333333" }}>No history yet</span>
       )}
       {history.map((r, i) => {
         const mult = parseFloat(r.crashMultiplier);

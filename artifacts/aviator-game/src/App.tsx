@@ -15,17 +15,15 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const sound = useSound();
 
-  const prevPhaseRef    = useRef(gameState.phase);
-  const prevMultRef     = useRef(gameState.multiplier);
-  const prevCountRef    = useRef(gameState.countdown);
-  const engineLiveRef   = useRef(false);
+  const prevPhaseRef  = useRef(gameState.phase);
+  const prevMultRef   = useRef(gameState.multiplier);
+  const prevCountRef  = useRef(gameState.countdown);
+  const engineLiveRef = useRef(false);
 
-  // Phase & multiplier → sounds
   useEffect(() => {
     const prev = prevPhaseRef.current;
     const cur  = gameState.phase;
     prevPhaseRef.current = cur;
-
     if (prev !== cur) {
       if (cur === "flying") {
         sound.playTakeoff();
@@ -39,14 +37,12 @@ export default function App() {
         if (engineLiveRef.current) { sound.stopEngine(); engineLiveRef.current = false; }
       }
     }
-
     if (cur === "flying" && engineLiveRef.current && gameState.multiplier !== prevMultRef.current) {
       sound.updateEngine(gameState.multiplier);
     }
     prevMultRef.current = gameState.multiplier;
   }, [gameState.phase, gameState.multiplier, sound]);
 
-  // Countdown tick
   useEffect(() => {
     if (gameState.phase !== "waiting") return;
     const prevInt = Math.ceil(prevCountRef.current);
@@ -60,19 +56,20 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ background: "#0d0e1c" }}>
-        <div className="flex flex-col items-center gap-3">
-          <span className="font-black text-3xl tracking-widest uppercase" style={{ color: "#e03131", textShadow: "0 0 24px rgba(224,49,49,0.5)" }}>
+      <div className="flex items-center justify-center h-screen" style={{ background: "#0d0d0d" }}>
+        <div className="flex flex-col items-center gap-4">
+          <span className="font-black text-4xl tracking-widest uppercase" style={{ color: "#e03131", textShadow: "0 0 32px rgba(224,49,49,0.55)", letterSpacing: "0.2em" }}>
             AVIATOR
           </span>
-          <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "#2a2b42", borderTopColor: "#e03131" }} />
+          <div className="w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "#222222", borderTopColor: "#e03131" }} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden" style={{ background: "#12131f" }}>
+    <div className="flex flex-col h-screen overflow-hidden" style={{ background: "#0d0d0d" }}>
+      {/* Header */}
       <Header
         user={user}
         connected={connected}
@@ -80,52 +77,70 @@ export default function App() {
         onLogout={logout}
         muted={sound.muted}
         onToggleMute={sound.toggleMute}
+        onDeposit={() => setShowAuth(true)}
       />
 
+      {/* History bar */}
       <HistoryBar history={gameState.history} />
 
+      {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar */}
-        <div className="shrink-0 overflow-hidden" style={{ width: 220, minWidth: 180 }}>
-          <PlayerBetsList bets={gameState.bets} multiplier={gameState.multiplier} phase={gameState.phase} />
+        {/* Sidebar */}
+        <div className="shrink-0 overflow-hidden" style={{ width: 224, minWidth: 180 }}>
+          <PlayerBetsList
+            bets={gameState.bets}
+            multiplier={gameState.multiplier}
+            phase={gameState.phase}
+          />
         </div>
 
-        {/* Main area */}
+        {/* Canvas + bet panels */}
         <div className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-hidden" style={{ background: "#0d0e1c" }}>
+          {/* Game canvas */}
+          <div className="flex-1 overflow-hidden" style={{ background: "#0d0d0d" }}>
             <GameCanvas gameState={gameState} />
           </div>
 
           {/* Bet panels */}
           <div
             className="grid grid-cols-2 gap-2 p-2 shrink-0"
-            style={{ background: "#12131f", borderTop: "1px solid #2a2b42" }}
+            style={{ background: "#111111", borderTop: "1px solid #1e1e1e" }}
           >
             <BetPanel
               gameState={gameState}
               userId={user?.id ?? null}
               onBetPlaced={handleBetPlaced}
               onCashout={handleCashout}
+              onAuthClick={() => setShowAuth(true)}
               panelIndex={0}
             />
             <BetPanel
               gameState={gameState}
-              userId={user ? -(user.id) : null}
+              userId={user?.id ?? null}
               onBetPlaced={handleBetPlaced}
               onCashout={handleCashout}
+              onAuthClick={() => setShowAuth(true)}
               panelIndex={1}
             />
           </div>
         </div>
       </div>
 
-      {/* Footer bar */}
+      {/* Footer */}
       <div
         className="flex items-center justify-between px-4 shrink-0"
-        style={{ height: 28, background: "#0d0e1c", borderTop: "1px solid #1a1b2c" }}
+        style={{ height: 26, background: "#0a0a0a", borderTop: "1px solid #161616" }}
       >
-        <span className="text-xs" style={{ color: "#33344a" }}>🔒 Provably Fair Game</span>
-        <span className="text-xs font-semibold" style={{ color: "#33344a" }}>Powered by <span style={{ color: "#e03131" }}>SPRIBE</span></span>
+        <div className="flex items-center gap-1.5">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#333333" strokeWidth="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span className="text-xs" style={{ color: "#333333" }}>Provably Fair Game</span>
+        </div>
+        <span className="text-xs" style={{ color: "#333333" }}>
+          Powered by <span style={{ color: "#e03131", fontWeight: 700 }}>SPRIBE</span>
+        </span>
       </div>
 
       {showAuth && (

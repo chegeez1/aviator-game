@@ -24,10 +24,10 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
 }
 
 export const api = {
-  register: (username: string, password: string) =>
-    req<{ token: string; user: { id: number; username: string; balance: string } }>("POST", "/auth/register", { username, password }),
-  login: (username: string, password: string) =>
-    req<{ token: string; user: { id: number; username: string; balance: string } }>("POST", "/auth/login", { username, password }),
+  register: (phone: string, password: string) =>
+    req<{ token: string; user: { id: number; username: string; balance: string } }>("POST", "/auth/register", { phone, password }),
+  login: (phone: string, password: string) =>
+    req<{ token: string; user: { id: number; username: string; balance: string } }>("POST", "/auth/login", { phone, password }),
   me: () =>
     req<{ id: number; username: string; balance: string; totalWon: string }>("GET", "/auth/me"),
   gameState: () =>

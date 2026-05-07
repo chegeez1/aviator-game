@@ -1,13 +1,15 @@
 import http from "node:http";
-import app from "./app.js";
-import { logger } from "./lib/logger.js";
-import { setupWebSocket } from "./lib/websocket.js";
-import { gameEngine } from "./lib/gameEngine.js";
+import app from "./app";
+import { logger } from "./lib/logger";
+import { setupWebSocket } from "./lib/websocket";
+import { gameEngine } from "./lib/gameEngine";
 
 const rawPort = process.env["PORT"];
 
 if (!rawPort) {
-  throw new Error("PORT environment variable is required but was not provided.");
+  throw new Error(
+    "PORT environment variable is required but was not provided.",
+  );
 }
 
 const port = Number(rawPort);
@@ -17,7 +19,6 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 const server = http.createServer(app);
-
 setupWebSocket(server);
 
 server.listen(port, () => {
@@ -28,6 +29,6 @@ server.listen(port, () => {
 });
 
 server.on("error", (err) => {
-  logger.error({ err }, "Server error");
+  logger.error({ err }, "Error listening on port");
   process.exit(1);
 });
