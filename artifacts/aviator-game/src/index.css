@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+:root {
+  --bg-deep:   #0d0e1c;
+  --bg-main:   #12131f;
+  --bg-panel:  #1a1b2c;
+  --bg-card:   #1e2035;
+  --bg-input:  #0d0e1c;
+  --border:    #2a2b42;
+  --border-hi: #353650;
+  --red:       #e03131;
+  --green:     #22c55e;
+  --text-dim:  rgba(255,255,255,0.35);
+  --text-mid:  rgba(255,255,255,0.6);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -10,29 +24,15 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: #0a0a12;
+  background: var(--bg-main);
   font-family: 'Inter', sans-serif;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #111118;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3a4a;
-}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track  { background: var(--bg-panel); }
+::-webkit-scrollbar-thumb  { background: var(--border-hi); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #454660; }
 
 input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-}
-input[type="number"] {
-  -moz-appearance: textfield;
-}
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type="number"] { -moz-appearance: textfield; }
