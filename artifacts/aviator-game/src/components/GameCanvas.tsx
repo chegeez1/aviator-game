@@ -182,7 +182,8 @@ export function GameCanvas({ gameState }: Props) {
     const tick = tickRef.current;
 
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#0d0e1c";
+    // Very dark charcoal matching Spribe reference (less blue-tinted than before)
+    ctx.fillStyle = "#111118";
     ctx.fillRect(0, 0, W, H);
 
     const { phase, multiplier, crashMultiplier, countdown } = gameState;

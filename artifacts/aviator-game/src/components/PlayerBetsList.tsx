@@ -123,7 +123,7 @@ export function PlayerBetsList({ bets, multiplier, phase }: Props) {
                 {out && bet.cashoutMultiplier ? (
                   <span
                     className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: "#1565c0", color: "#fff", fontSize: 10 }}
+                    style={{ background: "#0891b2", color: "#fff", fontSize: 10, boxShadow: "0 0 6px rgba(8,145,178,0.5)" }}
                   >
                     {bet.cashoutMultiplier.toFixed(2)}x
                   </span>
