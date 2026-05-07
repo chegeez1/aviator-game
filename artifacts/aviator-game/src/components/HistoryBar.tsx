@@ -5,9 +5,9 @@ interface Props {
 }
 
 function pillStyle(mult: number): { bg: string; shadow: string } {
-  if (mult < 2)   return { bg: "#1565c0", shadow: "rgba(21,101,192,0.55)" };   // blue   — low
-  if (mult < 10)  return { bg: "#c2255c", shadow: "rgba(194,37,92,0.55)" };    // pink   — medium
-  return                 { bg: "#7048e8", shadow: "rgba(112,72,232,0.55)" };    // purple — high
+  if (mult < 2)   return { bg: "#1976d2", shadow: "rgba(25,118,210,0.6)" };    // vibrant blue  — low
+  if (mult < 10)  return { bg: "#e91e63", shadow: "rgba(233,30,99,0.6)" };     // hot pink      — medium
+  return                 { bg: "#7c3aed", shadow: "rgba(124,58,237,0.6)" };    // vivid purple  — high
 }
 
 export function HistoryBar({ history }: Props) {

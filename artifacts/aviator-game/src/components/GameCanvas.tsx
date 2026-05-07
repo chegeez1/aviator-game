@@ -321,17 +321,21 @@ export function GameCanvas({ gameState }: Props) {
     }
 
     if (pts.length >= 2) {
-      // HEAVY gradient fill — matches Spribe's prominent red area
-      const grad = ctx.createLinearGradient(0, padT, 0, oY);
+      // SOLID red mountain fill — matches Spribe's dramatic red hill shape
+      // Fill from curve down to baseline, using the curve shape as top edge
+      const topY = pts[pts.length - 1].y; // highest point reached
+      const grad = ctx.createLinearGradient(0, topY, 0, oY);
       if (phase === "crashed") {
-        grad.addColorStop(0,   "rgba(180,15,15,0.55)");
-        grad.addColorStop(0.5, "rgba(140,5,5,0.25)");
-        grad.addColorStop(1,   "rgba(80,0,0,0.04)");
+        grad.addColorStop(0,    "rgba(160,10,10,0.80)");
+        grad.addColorStop(0.35, "rgba(130,5,5,0.55)");
+        grad.addColorStop(0.7,  "rgba(90,0,0,0.22)");
+        grad.addColorStop(1,    "rgba(50,0,0,0.04)");
       } else {
-        grad.addColorStop(0,   "rgba(224,49,49,0.55)");
-        grad.addColorStop(0.4, "rgba(200,30,30,0.28)");
-        grad.addColorStop(0.8, "rgba(160,10,10,0.10)");
-        grad.addColorStop(1,   "rgba(100,0,0,0.02)");
+        grad.addColorStop(0,    "rgba(220,40,40,0.88)");
+        grad.addColorStop(0.25, "rgba(200,25,25,0.65)");
+        grad.addColorStop(0.6,  "rgba(160,10,10,0.28)");
+        grad.addColorStop(0.85, "rgba(100,5,5,0.08)");
+        grad.addColorStop(1,    "rgba(60,0,0,0.01)");
       }
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
@@ -342,29 +346,18 @@ export function GameCanvas({ gameState }: Props) {
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Curve line
+      // Bright red curve line on top
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
       ctx.shadowColor = phase === "crashed" ? "transparent" : "#ff2020";
-      ctx.shadowBlur  = phase === "crashed" ? 0 : 22;
-      ctx.strokeStyle = phase === "crashed" ? "#5a2020" : "#e03131";
-      ctx.lineWidth   = 4;
+      ctx.shadowBlur  = phase === "crashed" ? 0 : 18;
+      ctx.strokeStyle = phase === "crashed" ? "#4a1818" : "#e03131";
+      ctx.lineWidth   = 3.5;
       ctx.lineJoin    = "round";
       ctx.lineCap     = "round";
       ctx.stroke();
       ctx.shadowBlur  = 0;
-
-      // Dashed horizontal guide (flying)
-      if (phase === "flying") {
-        ctx.strokeStyle = "rgba(224,49,49,0.18)";
-        ctx.lineWidth   = 1;
-        ctx.setLineDash([5, 7]);
-        ctx.beginPath();
-        ctx.moveTo(padL, lastP.y); ctx.lineTo(lastP.x - 60, lastP.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
     }
 
     // Biplane at tip
@@ -401,24 +394,20 @@ export function GameCanvas({ gameState }: Props) {
       ctx.shadowBlur  = 0;
     }
 
-    // ── LIVE MULTIPLIER — positioned near the plane tip ────────────────────────
+    // ── LIVE MULTIPLIER — large, centered above the curve, matching Spribe ──────
     if (phase === "flying") {
-      const ms = Math.round(Math.max(H * 0.125, 46));
+      const ms = Math.round(Math.max(H * 0.13, 50));
+      // Place at horizontal center of canvas, vertically in upper 40% of canvas
+      const textX = W / 2;
+      const textY = Math.max(lastP.y - 30, padT + ms + 10);
 
-      // Position: slightly above and to the left of the plane
-      // At early flight, plane is near center; as mult grows it moves right+up
-      // We place text where it's always readable — 40px left of plane, 60px above
-      const textX = Math.min(lastP.x + 10, W - 120);
-      const textY = Math.max(lastP.y - 55, padT + ms);
-
-      ctx.textAlign = "left";
-      ctx.shadowColor = "rgba(255,255,255,0.4)";
-      ctx.shadowBlur  = 24;
+      ctx.textAlign   = "center";
+      ctx.shadowColor = "rgba(255,255,255,0.45)";
+      ctx.shadowBlur  = 28;
       ctx.fillStyle   = "#ffffff";
-      ctx.font = `bold ${ms}px Inter, sans-serif`;
-      ctx.fillText(`${multiplier.toFixed(2)}x`, textX - ms * 1.8, textY);
+      ctx.font        = `bold ${ms}px Inter, sans-serif`;
+      ctx.fillText(`${multiplier.toFixed(2)}x`, textX, Math.min(textY, H / 2));
       ctx.shadowBlur  = 0;
-      ctx.textAlign   = "left";
     }
   }, [gameState]);
 
