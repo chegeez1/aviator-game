@@ -24,42 +24,51 @@ export interface ActiveBet {
   cashoutMultiplier: number | null;
   isBot?: boolean;
   freeBet?: boolean;
+  avatarId?: number;
 }
 
-const WAIT_MS  = 6000;
-const TICK_MS  = 50;
+const WAIT_MS = 6000;
+const TICK_MS = 50;
 
-// ── Bot name pool ────────────────────────────────────────────────────────────
-const BOT_FIRST = [
-  "P","J","M","K","W","N","A","F","R","G","S","T","L","B","C","D",
-  "E","H","I","O","U","V","Z","Q","Y","X","Ch","Br","St","Kw","Ng","Sh",
-];
-const BOT_LAST  = [
-  "***a","***n","***e","***i","***o","***u","***h","***s",
-  "***ki","***ro","***ma","***ne","***li","***la","***mo","***sa",
+// ── Bot name pool (Kenyan-style masked) ─────────────────────────────────────
+const BOT_NAMES = [
+  "P***a","J***n","M***e","K***i","W***a","N***o","A***h","F***e",
+  "R***i","G***n","S***e","T***a","L***o","B***n","C***i","D***e",
+  "E***a","H***n","O***i","U***e","V***a","Z***a","Y***o","X***n",
+  "Ng***a","Ch***o","Br***n","Kw***e","Sh***i","Mu***a","Ki***o","Wa***e",
+  "Ot***o","Ad***a","Ek***e","Ip***o","Am***u","Ob***i","Ug***e","En***a",
+  "Abi***","Bam***","Cam***","Dan***","Eli***","Fab***","Gil***","Hal***",
+  "Ike***","Jan***","Kel***","Lem***","Max***","Nat***","Olu***","Pat***",
+  "Que***","Rex***","Sam***","Tim***","Uma***","Van***","Wes***","Xav***",
+  "Yaw***","Zak***","Ace***","Ben***","Cal***","Del***","Eve***","Fox***",
 ];
 
 function botName(): string {
-  return BOT_FIRST[Math.floor(Math.random() * BOT_FIRST.length)]
-       + BOT_LAST [Math.floor(Math.random() * BOT_LAST.length)];
+  return BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
 }
 
-const BOT_AMOUNT_TIERS = [
-  { weight: 0.40, min:   50, max:   500, step:  10 },
-  { weight: 0.30, min:  500, max:  2000, step:  50 },
-  { weight: 0.18, min: 2000, max: 10000, step: 100 },
-  { weight: 0.08, min:10000, max: 35000, step: 500 },
-  { weight: 0.04, min:35000, max:100000, step:1000 },
+// randomuser.me has 99 male (1-99) + 99 female (100-198) portraits
+function randomAvatarId(): number {
+  return 1 + Math.floor(Math.random() * 198);
+}
+
+// ── Amount distribution ──────────────────────────────────────────────────────
+const AMOUNT_TIERS = [
+  { w: 0.30, min:   20, max:   200, step:  10 },
+  { w: 0.30, min:  200, max:  1000, step:  50 },
+  { w: 0.22, min: 1000, max:  5000, step: 100 },
+  { w: 0.12, min: 5000, max: 20000, step: 500 },
+  { w: 0.06, min:20000, max:100000, step:1000 },
 ];
 
 function botAmount(): number {
   const r = Math.random();
   let cum = 0;
-  for (const tier of BOT_AMOUNT_TIERS) {
-    cum += tier.weight;
+  for (const t of AMOUNT_TIERS) {
+    cum += t.w;
     if (r <= cum) {
-      const raw = tier.min + Math.random() * (tier.max - tier.min);
-      return Math.round(raw / tier.step) * tier.step;
+      const raw = t.min + Math.random() * (t.max - t.min);
+      return Math.round(raw / t.step) * t.step;
     }
   }
   return 500;
@@ -67,15 +76,15 @@ function botAmount(): number {
 
 function botCashout(): number | null {
   const r = Math.random();
-  if (r < 0.12) return null;                                        // ride to crash
-  if (r < 0.42) return +(1.10 + Math.random() * 0.90).toFixed(2);  // 1.10–2.00
-  if (r < 0.68) return +(2.00 + Math.random() * 3.00).toFixed(2);  // 2.00–5.00
-  if (r < 0.84) return +(5.00 + Math.random() * 15.0).toFixed(2);  // 5.00–20.00
-  if (r < 0.94) return +(20.0 + Math.random() * 30.0).toFixed(2);  // 20.00–50.00
+  if (r < 0.10) return null;
+  if (r < 0.38) return +(1.10 + Math.random() * 0.90).toFixed(2);  // 1.10–2.00
+  if (r < 0.62) return +(2.00 + Math.random() * 3.00).toFixed(2);  // 2.00–5.00
+  if (r < 0.78) return +(5.00 + Math.random() * 15.0).toFixed(2);  // 5.00–20.00
+  if (r < 0.90) return +(20.0 + Math.random() * 30.0).toFixed(2);  // 20–50
   return +(50.0 + Math.random() * 50.0).toFixed(2);                 // 50–100
 }
 
-// ── Crash point generation ───────────────────────────────────────────────────
+// ── Crash point ──────────────────────────────────────────────────────────────
 function generateCrashPoint(): number {
   const r = Math.random();
   if (r < 0.03) return 1.0;
@@ -85,12 +94,8 @@ function generateCrashPoint(): number {
 // ── Engine ───────────────────────────────────────────────────────────────────
 class GameEngine extends EventEmitter {
   state: GameState = {
-    phase:           "waiting",
-    multiplier:       1.0,
-    crashMultiplier:  null,
-    roundId:          null,
-    countdown:        WAIT_MS / 1000,
-    startedAt:        null,
+    phase: "waiting", multiplier: 1.0, crashMultiplier: null,
+    roundId: null, countdown: WAIT_MS / 1000, startedAt: null,
   };
 
   activeBets: Map<number, ActiveBet> = new Map();
@@ -99,11 +104,9 @@ class GameEngine extends EventEmitter {
   private _botIdCounter = -1;
   private _botTimers: NodeJS.Timeout[] = [];
 
-  async start(): Promise<void> {
-    await this._waitPhase();
-  }
+  async start(): Promise<void> { await this._waitPhase(); }
 
-  // ── Waiting ──────────────────────────────────────────────────────────────
+  // ── Waiting ─────────────────────────────────────────────────────────────
   private async _waitPhase(): Promise<void> {
     this._crashPoint = generateCrashPoint();
     this._clearBotTimers();
@@ -114,7 +117,6 @@ class GameEngine extends EventEmitter {
     this.activeBets.clear();
     this.emit("waiting", { countdown: this.state.countdown });
 
-    // Schedule bots to trickle in during the wait window
     this._scheduleBots();
 
     let elapsed = 0;
@@ -131,31 +133,34 @@ class GameEngine extends EventEmitter {
   }
 
   private _scheduleBots(): void {
-    const count = 22 + Math.floor(Math.random() * 28); // 22–50 bots
+    // 100–150 bots per round
+    const count = 100 + Math.floor(Math.random() * 51);
     for (let i = 0; i < count; i++) {
-      const delay = 200 + Math.random() * (WAIT_MS - 800);
+      const delay = 150 + Math.random() * (WAIT_MS - 400);
       const t = setTimeout(() => {
         if (this.state.phase !== "waiting") return;
-        const id    = this._botIdCounter--;
+        const id = this._botIdCounter--;
         const bet: ActiveBet = {
-          userId:           id,
-          username:         botName(),
-          betId:            id,
-          amount:           botAmount(),
-          autoCashout:      botCashout(),
-          cashedOut:        false,
-          cashoutMultiplier:null,
-          isBot:            true,
-          freeBet:          Math.random() < 0.09,
+          userId: id,
+          username: botName(),
+          betId: id,
+          amount: botAmount(),
+          autoCashout: botCashout(),
+          cashedOut: false,
+          cashoutMultiplier: null,
+          isBot: true,
+          freeBet: Math.random() < 0.08,
+          avatarId: randomAvatarId(),
         };
         this.activeBets.set(id, bet);
         this.emit("bet_placed", {
-          userId:     bet.userId,
-          username:   bet.username,
-          betId:      bet.betId,
-          amount:     bet.amount,
-          autoCashout:bet.autoCashout,
-          freeBet:    bet.freeBet,
+          userId: bet.userId,
+          username: bet.username,
+          betId: bet.betId,
+          amount: bet.amount,
+          autoCashout: bet.autoCashout,
+          freeBet: bet.freeBet,
+          avatarId: bet.avatarId,
         });
       }, delay);
       this._botTimers.push(t);
@@ -171,13 +176,13 @@ class GameEngine extends EventEmitter {
   private async _flyPhase(): Promise<void> {
     const [round] = await db.insert(roundsTable).values({
       crashMultiplier: String(this._crashPoint),
-      startedAt:       new Date(),
+      startedAt: new Date(),
     }).returning();
 
-    this.state.roundId   = round.id;
-    this.state.phase     = "flying";
+    this.state.roundId = round.id;
+    this.state.phase = "flying";
     this.state.multiplier = 1.0;
-    this.state.startedAt  = Date.now();
+    this.state.startedAt = Date.now();
 
     for (const [, bet] of this.activeBets) {
       if (!bet.isBot) {
@@ -196,11 +201,8 @@ class GameEngine extends EventEmitter {
 
         for (const [, bet] of this.activeBets) {
           if (!bet.cashedOut && bet.autoCashout !== null && mult >= bet.autoCashout) {
-            if (bet.isBot) {
-              this._doBotCashout(bet, mult);
-            } else {
-              await this._doCashout(bet, mult);
-            }
+            if (bet.isBot) this._doBotCashout(bet, mult);
+            else await this._doCashout(bet, mult);
           }
         }
 
@@ -216,9 +218,9 @@ class GameEngine extends EventEmitter {
     await this._crashPhase();
   }
 
-  // ── Crash ────────────────────────────────────────────────────────────────
+  // ── Crash ─────────────────────────────────────────────────────────────────
   private async _crashPhase(): Promise<void> {
-    this.state.phase          = "crashed";
+    this.state.phase = "crashed";
     this.state.crashMultiplier = this._crashPoint;
 
     for (const [, bet] of this.activeBets) {
@@ -242,21 +244,22 @@ class GameEngine extends EventEmitter {
 
   // ── Bot cashout (no DB) ──────────────────────────────────────────────────
   private _doBotCashout(bet: ActiveBet, multiplier: number): void {
-    bet.cashedOut         = true;
+    bet.cashedOut = true;
     bet.cashoutMultiplier = multiplier;
     this.emit("cashout", {
-      userId:            bet.userId,
-      username:          bet.username,
-      betId:             bet.betId,
+      userId: bet.userId,
+      username: bet.username,
+      betId: bet.betId,
       cashoutMultiplier: multiplier,
-      profit:            bet.amount * (multiplier - 1),
-      payout:            bet.amount * multiplier,
+      profit: bet.amount * (multiplier - 1),
+      payout: bet.amount * multiplier,
+      avatarId: bet.avatarId,
     });
   }
 
   // ── Real cashout (with DB) ───────────────────────────────────────────────
   async _doCashout(bet: ActiveBet, multiplier: number): Promise<number> {
-    bet.cashedOut         = true;
+    bet.cashedOut = true;
     bet.cashoutMultiplier = multiplier;
     const payout = Number(bet.amount) * multiplier;
     const profit = payout - Number(bet.amount);
@@ -270,18 +273,14 @@ class GameEngine extends EventEmitter {
       .where(eq(usersTable.id, bet.userId));
 
     this.emit("cashout", {
-      userId:            bet.userId,
-      username:          bet.username,
-      betId:             bet.betId,
-      cashoutMultiplier: multiplier,
-      profit,
-      payout,
+      userId: bet.userId, username: bet.username, betId: bet.betId,
+      cashoutMultiplier: multiplier, profit, payout,
     });
 
     return payout;
   }
 
-  // ── Public API ───────────────────────────────────────────────────────────
+  // ── Public API ────────────────────────────────────────────────────────────
   async placeBet(userId: number, username: string, amount: number, autoCashout: number | null): Promise<ActiveBet> {
     if (this.state.phase !== "waiting") throw new Error("Bets can only be placed during the waiting phase");
 

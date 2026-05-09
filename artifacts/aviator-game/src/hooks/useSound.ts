@@ -15,10 +15,27 @@ export interface SoundControls {
 
 export function useSound(): SoundControls {
   const [muted, setMuted] = useState(false);
-  const mutedRef = useRef(false);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const masterRef = useRef<GainNode | null>(null);
+  const mutedRef   = useRef(false);
+  const ctxRef     = useRef<AudioContext | null>(null);
+  const masterRef  = useRef<GainNode | null>(null);
   const engineNodesRef = useRef<{ nodes: AudioNode[]; oscMain: OscillatorNode; lfo: OscillatorNode; gainNode: GainNode } | null>(null);
+
+  // ─── Background music (HTML Audio — simplest way to loop an MP3) ────────────
+  const bgRef     = useRef<HTMLAudioElement | null>(null);
+  const bgStarted = useRef(false);
+
+  // Store in a ref so toggleMute can always call the freshest version
+  const ensureBgMusicRef = useRef(() => {
+    if (bgStarted.current) return;
+    bgStarted.current = true;
+    if (!bgRef.current) {
+      const audio = new Audio("/aviator-music.mp3");
+      audio.loop   = true;
+      audio.volume = mutedRef.current ? 0 : 0.30;
+      bgRef.current = audio;
+    }
+    bgRef.current.play().catch(() => { bgStarted.current = false; });
+  });
 
   function getCtx(): { ctx: AudioContext; master: GainNode } {
     if (!ctxRef.current || ctxRef.current.state === "closed") {
@@ -30,16 +47,21 @@ export function useSound(): SoundControls {
       masterRef.current = master;
     }
     if (ctxRef.current.state === "suspended") ctxRef.current.resume().catch(() => {});
+    // Kick off the background track the first time any sound fires
+    ensureBgMusicRef.current();
     return { ctx: ctxRef.current, master: masterRef.current! };
   }
 
   const toggleMute = useCallback(() => {
+    // Clicking the speaker icon is a user gesture — start music if not yet playing
+    ensureBgMusicRef.current();
     setMuted(prev => {
       const next = !prev;
       mutedRef.current = next;
       if (masterRef.current) {
         masterRef.current.gain.setTargetAtTime(next ? 0 : 0.85, masterRef.current.context.currentTime, 0.06);
       }
+      if (bgRef.current) bgRef.current.volume = next ? 0 : 0.30;
       return next;
     });
   }, []);

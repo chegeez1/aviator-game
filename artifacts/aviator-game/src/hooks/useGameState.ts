@@ -2,13 +2,18 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useWebSocket } from "./useWebSocket";
 import { api, type GameState, type ActiveBetInfo, type Round } from "../lib/api";
 
+export interface BetInfo extends ActiveBetInfo {
+  freeBet?: boolean;
+  avatarId?: number;
+}
+
 export interface FullGameState {
   phase: "waiting" | "flying" | "crashed";
   multiplier: number;
   crashMultiplier: number | null;
   roundId: number | null;
   countdown: number;
-  bets: (ActiveBetInfo & { freeBet?: boolean })[];
+  bets: BetInfo[];
   history: Round[];
   connected: boolean;
 }
@@ -51,7 +56,7 @@ export function useGameState() {
             crashMultiplier: m.crashMultiplier,
             roundId: m.roundId,
             countdown: m.countdown,
-            bets: m.bets ?? [],
+            bets: (m.bets ?? []) as BetInfo[],
           };
           break;
         }
@@ -80,10 +85,16 @@ export function useGameState() {
           break;
         }
         case "bet_placed": {
-          const b = msg as unknown as { userId: number; username: string; amount: number; autoCashout: number | null; freeBet?: boolean };
-          const exists = prev.bets.some(x => x.userId === b.userId);
-          if (!exists) {
-            const newBet = { userId: b.userId, username: b.username, amount: b.amount, cashedOut: false, cashoutMultiplier: null, freeBet: b.freeBet };
+          const b = msg as unknown as {
+            userId: number; username: string; amount: number;
+            autoCashout: number | null; freeBet?: boolean; avatarId?: number;
+          };
+          if (!prev.bets.some(x => x.userId === b.userId)) {
+            const newBet: BetInfo = {
+              userId: b.userId, username: b.username, amount: b.amount,
+              cashedOut: false, cashoutMultiplier: null,
+              freeBet: b.freeBet, avatarId: b.avatarId,
+            };
             next.bets = [...prev.bets, newBet];
           }
           break;
