@@ -371,18 +371,15 @@ export function GameCanvas({ gameState }: Props) {
       ctx.shadowBlur  = 0;
     }
 
-    // ── LIVE MULTIPLIER ────────────────────────────────────────────────────────
+    // ── LIVE MULTIPLIER — always fixed center, large ──────────────────────────
     if (phase === "flying") {
-      const ms = Math.round(Math.max(H * 0.13, 50));
-      const textX = W / 2;
-      const textY = Math.max(lastP.y - 30, padT + ms + 10);
-
+      const ms = Math.round(Math.max(H * 0.155, 60));
       ctx.textAlign   = "center";
-      ctx.shadowColor = "rgba(255,255,255,0.45)";
-      ctx.shadowBlur  = 28;
+      ctx.shadowColor = "rgba(255,255,255,0.50)";
+      ctx.shadowBlur  = 36;
       ctx.fillStyle   = "#ffffff";
-      ctx.font        = `bold ${ms}px Inter, sans-serif`;
-      ctx.fillText(`${multiplier.toFixed(2)}x`, textX, Math.min(textY, H / 2));
+      ctx.font        = `900 ${ms}px Inter, sans-serif`;
+      ctx.fillText(`${multiplier.toFixed(2)}x`, W / 2, H * 0.48);
       ctx.shadowBlur  = 0;
     }
   }, [gameState]);
